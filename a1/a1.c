@@ -1,4 +1,3 @@
-
 #include <sys/types.h>
 #include <sys/stat.h>
 #include <unistd.h>
@@ -14,7 +13,7 @@
 
 #define MAX_MEMORY 10000
 
-char magic[3];
+
 
 
 
@@ -128,26 +127,19 @@ void listDir(char *dirName, bool isRecursive,bool isName,char *nameStartsWith,bo
         
     }
  }
-
-        // test the type of the directory's element
        closedir(dir);
 }
 
-/*MAGIC: 2
-HEADER_SIZE: 2
-VERSION: 2
-NO_OF_SECTIONS: 1
-SECT_NAME: 13
-SECT_TYPE: 4
-SECT_OFFSET: 4
-SECT_SIZE: 4*/
+
 
 
 void parse(char* path)
 {
 
     int fileDescriptor;
-    if(!(fileDescriptor = open(path,O_RDONLY)))   //DESCHID FD
+    fileDescriptor = open(path,O_RDONLY);
+
+    if(fileDescriptor == -1) //DESCHID FD
     {
         printf("ERROR");
         return;
@@ -158,15 +150,14 @@ int version =0;
 int no_of_sections =0;
 char sect_name[14];
 int sect_type =0;
-int sect_offset =0;
 int sect_size =0;
 
-read(fileDescriptor,&magic,2);
+read(fileDescriptor,magic,2);
 read(fileDescriptor,&heade_size,2);
 read(fileDescriptor,&version,2);
 read(fileDescriptor,&no_of_sections,1);
 
-magic[2] = '\0';
+
 
 if(strcmp(magic,"6P")!=0)
 {
@@ -176,24 +167,28 @@ return;
 
 if(!(version>=119 && version<=191))
 {
-     printf("ERROR\nwrong version");
+  printf("ERROR\nwrong version");
 return;
 }
 
 if(!(no_of_sections>=7 && no_of_sections<=20))
 {
-         printf("ERROR\nwrong sect_nr");
+    printf("ERROR\nwrong sect_nr");
 return;
 }
 
 
+char sect_names[MAX_MEMORY][14];
+int sect_types[MAX_MEMORY];
+int sect_sizes[MAX_MEMORY];
+
 int array[] ={57,83,90,16,23,27};
 int arrayLenght = sizeof(array)/sizeof(array[0]);
-for(int i=0;i<no_of_sections;i++)
+for(int i=1;i<=no_of_sections;i++)
 {
-read(fileDescriptor,&sect_name,13);
+read(fileDescriptor,sect_name,13);
 read(fileDescriptor,&sect_type,4);
-read(fileDescriptor,&sect_offset,4);
+lseek(fileDescriptor,+4,SEEK_CUR);
 read(fileDescriptor,&sect_size,4);
 
 bool typeInArray = false;
@@ -210,40 +205,30 @@ for(int j=0;j<arrayLenght;j++)
        printf("ERROR\nwrong sect_types");
      return;
     }
+    strcpy(sect_names[i],sect_name);
+    sect_types[i] =sect_type;
+    sect_sizes[i] = sect_size;
+
 
 }
-
-
-/*SUCCESS
-version=<version_number>
-nr_sections=<no_of_sections>
-section1: <NAME_1> <TYPE_1> <SIZE_1>
-section2: <NAME_2> <TYPE_2> <SIZE_2>
-*/
 
 
 printf("SUCCESS\nversion=%d\nnr_sections=%d\n",version,no_of_sections);
-lseek(fileDescriptor,7,SEEK_SET);
-for(int i=1;i<=no_of_sections;i++)
-{
-read(fileDescriptor,&sect_name,13);
-read(fileDescriptor,&sect_type,4);
-read(fileDescriptor,&sect_offset,4);
-read(fileDescriptor,&sect_size,4);
 
-printf("section%d: %s %d %d\n",i,sect_name,sect_type,sect_size);
-}
-
+    for(int i=1;i<=no_of_sections;i++)
+    {
+     printf("section%d: %s %d %d\n",i,sect_names[i],sect_types[i],sect_sizes[i]);
+    }   
 
 }
 
 int main(int argc, char **argv){
 
-    strncpy(magic,"6P",2);
-    magic[2] = '\0';
+
     bool isRecursive = false;
     bool isName = false;
     bool isPermission = false;
+ 
 
 
 
@@ -297,8 +282,15 @@ int main(int argc, char **argv){
             //FOR PARSE OPTION
             else if(strcmp(argv[1],"parse")==0)
             {
+
                 char path[MAX_MEMORY];
                 strcpy(path,argv[2]+5);
+                parse(path);
+            }
+            else if(strcmp(argv[2],"parse")==0)
+            {
+                char path[MAX_MEMORY];
+                strcpy(path,argv[1]+5);
                 parse(path);
             }
         }
