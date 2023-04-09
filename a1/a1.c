@@ -226,38 +226,6 @@ printf("SUCCESS\nversion=%d\nnr_sections=%d\n",version,no_of_sections);
 void extract(char* path, int line, int section)
 {
 
-    int fileDescriptor;
-    fileDescriptor = open(path,O_RDONLY);
-
-    if(fileDescriptor == -1) //DESCHID FD
-    {
-        printf("ERROR");
-        return;
-    }
-
-    int currSection =0;
-    bool sectionFound = false;
-    bool lineCount = false;
-
-
-    off_t *start = lseek(fileDescriptor,0,SEEK_CUR);
-    char buf[MAX_MEMORY];
-    while(read(fileDescriptor,buf,1))
-    {
-        if(buf[0] == '\n')
-        {
-            currSection ++ ;
-            if(currSection == section)
-            {
-                sectionFound = true;
-                if()
-
-            }
-        }
-        start = lseek(fileDescriptor,0,SEEK_CUR);
-    }
-
-
 
 }
 
