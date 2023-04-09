@@ -144,11 +144,11 @@ void parse(char* path)
         printf("ERROR");
         return;
     }
-char magic[3];
+char magic[3] ="";
 int heade_size =0;
 int version =0;
 int no_of_sections =0;
-char sect_name[14];
+char sect_name[14]="";
 int sect_type =0;
 int sect_size =0;
 
@@ -162,34 +162,32 @@ read(fileDescriptor,&no_of_sections,1);
 if(strcmp(magic,"6P")!=0)
 {
 printf("ERROR\nwrong magic");
+close(fileDescriptor);
 return;
 }
 
 if(!(version>=119 && version<=191))
 {
   printf("ERROR\nwrong version");
+  close(fileDescriptor);
 return;
 }
 
 if(!(no_of_sections>=7 && no_of_sections<=20))
 {
     printf("ERROR\nwrong sect_nr");
+    close(fileDescriptor);
 return;
 }
 
-
-char sect_names[MAX_MEMORY][14];
-int sect_types[MAX_MEMORY];
-int sect_sizes[MAX_MEMORY];
-
 int array[] ={57,83,90,16,23,27};
 int arrayLenght = sizeof(array)/sizeof(array[0]);
-for(int i=1;i<=no_of_sections;i++)
+for(int i=0;i<no_of_sections;i++)
 {
-read(fileDescriptor,sect_name,13);
+lseek(fileDescriptor,13,SEEK_CUR);
 read(fileDescriptor,&sect_type,4);
-lseek(fileDescriptor,+4,SEEK_CUR);
-read(fileDescriptor,&sect_size,4);
+lseek(fileDescriptor,8,SEEK_CUR);
+
 
 bool typeInArray = false;
 
@@ -203,22 +201,63 @@ for(int j=0;j<arrayLenght;j++)
     if(!typeInArray)
     {
        printf("ERROR\nwrong sect_types");
+       close(fileDescriptor);
      return;
     }
-    strcpy(sect_names[i],sect_name);
-    sect_types[i] =sect_type;
-    sect_sizes[i] = sect_size;
 
+}
+
+lseek(fileDescriptor,7,SEEK_SET);
+printf("SUCCESS\nversion=%d\nnr_sections=%d\n",version,no_of_sections);
+
+    for(int i=0;i<no_of_sections;i++)
+    {
+        read(fileDescriptor,sect_name,13);
+        read(fileDescriptor,&sect_type,4);
+        lseek(fileDescriptor,4,SEEK_CUR);
+        read(fileDescriptor,&sect_size,4);
+     printf("section%d: %s %d %d\n",i+1,sect_name,sect_type,sect_size);
+    }   
+    close(fileDescriptor);
 
 }
 
 
-printf("SUCCESS\nversion=%d\nnr_sections=%d\n",version,no_of_sections);
+void extract(char* path, int line, int section)
+{
 
-    for(int i=1;i<=no_of_sections;i++)
+    int fileDescriptor;
+    fileDescriptor = open(path,O_RDONLY);
+
+    if(fileDescriptor == -1) //DESCHID FD
     {
-     printf("section%d: %s %d %d\n",i,sect_names[i],sect_types[i],sect_sizes[i]);
-    }   
+        printf("ERROR");
+        return;
+    }
+
+    int currSection =0;
+    bool sectionFound = false;
+    bool lineCount = false;
+
+
+    off_t *start = lseek(fileDescriptor,0,SEEK_CUR);
+    char buf[MAX_MEMORY];
+    while(read(fileDescriptor,buf,1))
+    {
+        if(buf[0] == '\n')
+        {
+            currSection ++ ;
+            if(currSection == section)
+            {
+                sectionFound = true;
+                if()
+
+            }
+        }
+        start = lseek(fileDescriptor,0,SEEK_CUR);
+    }
+
+
 
 }
 
@@ -292,6 +331,34 @@ int main(int argc, char **argv){
                 char path[MAX_MEMORY];
                 strcpy(path,argv[1]+5);
                 parse(path);
+            }
+            else if(strcmp(argv[1],"extract") == 0)
+            {
+                char path[MAX_MEMORY];
+                char sec[MAX_MEMORY];
+                char li[MAX_MEMORY];
+                int section;
+                int line;
+                for(int i=2;i<argc;i++)
+                {
+                    if(strncmp(argv[i],"path=",5)==0)
+                    {
+                        strcpy(path,argv[i]+5);
+
+                    }
+                    if(strncmp(argv[i],"section=",8)==0)
+                    {
+                        strcpy(sec,argv[i]+8);
+                        section = atoi(sec);
+
+                    }
+                    if(strncmp(argv[i],"line=",5)==0)
+                    {
+                        strcpy(li,argv[i]+5);
+                        line = atoi(li);
+                    }
+                }
+                extract(path,line,section);
             }
         }
     }
